@@ -16,3 +16,7 @@ migrate_down:
 ## 例如： make migrate_force V=1
 migrate_force:
 	migrate -database ${DATABASE_URL} -path ./db/migrations force $$V
+
+## sqlc generate:
+sqlc:
+	sqlc generate
