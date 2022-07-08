@@ -41,6 +41,10 @@ func RandomMoney() int64 {
 
 // RandomCurrency 随机一种货币
 func RandomCurrency() string {
+	// 常见货币种类
+	/*
+		RMB（人民币）、HKD（港币）、USD（美元）、EUR（欧元）、JPY（日元）、GBP（英镑）
+	*/
 	currencies := []string{"RMB", "USD", "EUR"}
 	n := len(currencies)
 	return currencies[rand.Intn(n)]

@@ -5,18 +5,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"lightsaid.com/simplebank/utils"
 )
-
-// 常见货币种类
-/*
-	RMB（人民币）、HKD（港币）、USD（美元）、EUR（欧元）、JPY（日元）、GBP（英镑）
-*/
 
 func TestCreateAccount(t *testing.T) {
 	arg := CreateAccountParams{
-		Owner:    "xzz",
-		Balance:  100,
-		Currency: "RMB",
+		Owner:    utils.RandomOwner(),
+		Balance:  utils.RandomMoney(),
+		Currency: utils.RandomCurrency(),
 	}
 	account, err := testQueries.CreateAccount(context.Background(), arg)
 
