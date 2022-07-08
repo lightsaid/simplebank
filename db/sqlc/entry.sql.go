@@ -14,13 +14,18 @@ const createEntry = `-- name: CreateEntry :one
 insert into entries (
     account_id, amount
 ) values (
-    $1, $1
+    $1, $2
 ) returning id, account_id, amount, created_at
 `
 
+type CreateEntryParams struct {
+	AccountID int64 `json:"account_id"`
+	Amount    int64 `json:"amount"`
+}
+
 // 从业务角度，转账记录不应该有 删除或者修改
-func (q *Queries) CreateEntry(ctx context.Context, accountID int64) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, createEntry, accountID)
+func (q *Queries) CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error) {
+	row := q.db.QueryRowContext(ctx, createEntry, arg.AccountID, arg.Amount)
 	var i Entry
 	err := row.Scan(
 		&i.ID,
