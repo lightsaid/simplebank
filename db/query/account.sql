@@ -14,8 +14,14 @@ select * from accounts
 order by id
 limit $1 offset $2;
 
--- name: UpdateAccount :exec
+/*
+没有返回
+name: UpdateAccount :exec
 update accounts set balance = $2 where id = $1;
+*/
+
+-- name: UpdateAccount :one
+update accounts set balance = $2 where id = $1 returning *;
 
 -- name: DeleteAccount :exec
 delete from accounts where id = $1;

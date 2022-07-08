@@ -20,3 +20,7 @@ migrate_force:
 ## sqlc generate:
 sqlc:
 	sqlc generate
+
+## test 测试代码:
+test:
+	go test -v -cover ./...
