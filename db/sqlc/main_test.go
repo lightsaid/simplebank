@@ -21,14 +21,16 @@ const (
 
 // 创建一个 db queries
 var testQueries *Queries
+var testDB *sql.DB
 
 func TestMain(m *testing.M) {
-	conn, err := sql.Open(dbDriver, dbDSN)
+	var err error
+	testDB, err = sql.Open(dbDriver, dbDSN)
 	if err != nil {
 		log.Fatal("cannot connect to postgre: ", err)
 	}
 	// NOTE: *sql.DB 实现了 DBTX interface 所有方法
-	testQueries = New(conn)
+	testQueries = New(testDB)
 
 	os.Exit(m.Run())
 }
