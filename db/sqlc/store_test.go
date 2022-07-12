@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// NOTE: 测试驱动 TDD
+
 func TestTransferTx(t *testing.T) {
 	store := NewStore(testDB)
 
@@ -30,7 +32,7 @@ func TestTransferTx(t *testing.T) {
 			results <- result
 		}()
 	}
-
+	existed := make(map[int]bool)
 	for i := 0; i < n; i++ {
 		err := <-errs
 		require.NoError(t, err)
@@ -69,11 +71,40 @@ func TestTransferTx(t *testing.T) {
 		_, err = store.GetEntry(context.Background(), toEntry.ID)
 		require.NoError(t, err)
 
-		// TODO: 检查 account balance
+		// 检查 account
+		fromAccount := result.FromAccount
+		require.NotEmpty(t, fromAccount)
+		require.Equal(t, a1.ID, fromAccount.ID)
+
+		toAccount := result.ToAccount
+		require.NotEmpty(t, toAccount)
+		require.Equal(t, a2.ID, toAccount.ID)
+
+		diff1 := a1.Balance - fromAccount.Balance
+		// NOTE: 测试不通过，因为转账存在并发，还没有解决
+		// fmt.Printf("diff1: %d - %d = %d", a1.Balance, fromAccount.Balance, diff1)
+		diff2 := toAccount.Balance - a2.Balance
+
+		require.Equal(t, diff1, diff2)
+		require.True(t, diff1 > 0)
+		require.True(t, diff1%amount == 0) // diff1 = 1*amount, 2*amount, 3*amount ...
+
+		k := int(diff1 / amount)
+		require.True(t, k >= 1 && k <= n)
+		require.NotContains(t, existed, k)
+		existed[k] = true
 
 	}
 
-	// for _, result := range results {
+	updateAccount1, err := testQueries.GetAccount(context.Background(), a1.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, updateAccount1)
 
-	// }
+	updateAccount2, err := testQueries.GetAccount(context.Background(), a2.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, updateAccount2)
+
+	require.Equal(t, a1.Balance-int64(n)*amount, updateAccount1.Balance)
+	require.Equal(t, a2.Balance+int64(n)*amount, updateAccount2.Balance)
+
 }

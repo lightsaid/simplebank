@@ -99,9 +99,32 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 
 		// TODO:
 		// 4. a 账户 balance - 10
-
+		account1, err := q.GetAccount(context.Background(), arg.FromAccountID)
+		if err != nil {
+			return err
+		}
+		_, err = q.UpdateAccount(context.Background(), UpdateAccountParams{
+			ID:      account1.ID,
+			Balance: account1.Balance - arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
 		// 5. b 账户 balance + 10
+		account2, err := q.GetAccount(context.Background(), arg.ToAccountID)
+		if err != nil {
+			return err
+		}
+		_, err = q.UpdateAccount(context.Background(), UpdateAccountParams{
+			ID:      account2.ID,
+			Balance: account2.Balance + arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
 
+		result.FromAccount = account1
+		result.ToAccount = account2
 		return nil
 	})
 
