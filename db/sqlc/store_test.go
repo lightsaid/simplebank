@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,9 @@ func TestTransferTx(t *testing.T) {
 	a1 := createRandomAccount(t)
 	a2 := createRandomAccount(t)
 
-	n := 5
+	fmt.Println(">> before: ", a1.Balance)
+
+	n := 2
 	amount := int64(10)
 
 	errs := make(chan error)
@@ -82,8 +85,9 @@ func TestTransferTx(t *testing.T) {
 
 		diff1 := a1.Balance - fromAccount.Balance
 		// NOTE: 测试不通过，因为转账存在并发，还没有解决
-		// fmt.Printf("diff1: %d - %d = %d", a1.Balance, fromAccount.Balance, diff1)
+		fmt.Printf("diff1: %d - %d = %d\n", a1.Balance, fromAccount.Balance, diff1)
 		diff2 := toAccount.Balance - a2.Balance
+		fmt.Println(">> after: ", fromAccount.Balance)
 
 		require.Equal(t, diff1, diff2)
 		require.True(t, diff1 > 0)

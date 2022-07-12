@@ -97,13 +97,14 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		// TODO:
 		// 4. a 账户 balance - 10
-		account1, err := q.GetAccount(context.Background(), arg.FromAccountID)
+		// account1, err := q.GetAccount(context.Background(), arg.FromAccountID)
+		account1, err := q.GetAccountForUpdate(context.Background(), arg.FromAccountID)
+
 		if err != nil {
 			return err
 		}
-		_, err = q.UpdateAccount(context.Background(), UpdateAccountParams{
+		updateAccount1, err := q.UpdateAccount(context.Background(), UpdateAccountParams{
 			ID:      account1.ID,
 			Balance: account1.Balance - arg.Amount,
 		})
@@ -111,11 +112,13 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 		// 5. b 账户 balance + 10
-		account2, err := q.GetAccount(context.Background(), arg.ToAccountID)
+		// account2, err := q.GetAccount(context.Background(), arg.ToAccountID)
+		account2, err := q.GetAccountForUpdate(context.Background(), arg.ToAccountID)
+
 		if err != nil {
 			return err
 		}
-		_, err = q.UpdateAccount(context.Background(), UpdateAccountParams{
+		updateAccount2, err := q.UpdateAccount(context.Background(), UpdateAccountParams{
 			ID:      account2.ID,
 			Balance: account2.Balance + arg.Amount,
 		})
@@ -123,8 +126,8 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		result.FromAccount = account1
-		result.ToAccount = account2
+		result.FromAccount = updateAccount1
+		result.ToAccount = updateAccount2
 		return nil
 	})
 
