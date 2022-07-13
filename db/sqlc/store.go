@@ -97,37 +97,57 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		// 4. a 账户 balance - 10
-		// account1, err := q.GetAccount(context.Background(), arg.FromAccountID)
-		account1, err := q.GetAccountForUpdate(context.Background(), arg.FromAccountID)
+		// NOTE: 更新 balance 方式 1， 执行2条sql不高效率
+		// // 4. a 账户 balance - 10
+		// account1, err := q.GetAccountForUpdate(context.Background(), arg.FromAccountID)
+		// if err != nil {
+		// 	return err
+		// }
+		// updateAccount1, err := q.UpdateAccount(context.Background(), UpdateAccountParams{
+		// 	ID:      account1.ID,
+		// 	Balance: account1.Balance - arg.Amount,
+		// })
 
-		if err != nil {
-			return err
-		}
-		updateAccount1, err := q.UpdateAccount(context.Background(), UpdateAccountParams{
-			ID:      account1.ID,
-			Balance: account1.Balance - arg.Amount,
-		})
-		if err != nil {
-			return err
-		}
-		// 5. b 账户 balance + 10
-		// account2, err := q.GetAccount(context.Background(), arg.ToAccountID)
-		account2, err := q.GetAccountForUpdate(context.Background(), arg.ToAccountID)
+		// if err != nil {
+		// 	return err
+		// }
 
-		if err != nil {
-			return err
+		// // 5. b 账户 balance + 10
+		// account2, err := q.GetAccountForUpdate(context.Background(), arg.ToAccountID)
+
+		// if err != nil {
+		// 	return err
+		// }
+		// updateAccount2, err := q.UpdateAccount(context.Background(), UpdateAccountParams{
+		// 	ID:      account2.ID,
+		// 	Balance: account2.Balance + arg.Amount,
+		// })
+		// if err != nil {
+		// 	return err
+		// }
+
+		// result.FromAccount = updateAccount1
+		// result.ToAccount = updateAccount2
+
+		// NOTE: 更新 balance 方式 2, 一条SQL语句
+		param := AddAccountBalanceParams{
+			Amount: -arg.Amount,
+			ID:     arg.FromAccountID,
 		}
-		updateAccount2, err := q.UpdateAccount(context.Background(), UpdateAccountParams{
-			ID:      account2.ID,
-			Balance: account2.Balance + arg.Amount,
-		})
+		result.FromAccount, err = q.AddAccountBalance(context.Background(), param)
 		if err != nil {
-			return err
+			return nil
 		}
 
-		result.FromAccount = updateAccount1
-		result.ToAccount = updateAccount2
+		param = AddAccountBalanceParams{
+			Amount: arg.Amount,
+			ID:     arg.ToAccountID,
+		}
+		result.ToAccount, err = q.AddAccountBalance(context.Background(), param)
+		if err != nil {
+			return nil
+		}
+
 		return nil
 	})
 

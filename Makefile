@@ -24,3 +24,6 @@ sqlc:
 ## test 测试代码:
 test:
 	go test -v -cover ./...
+
+godb:
+	docker exec -it postgres-14-alpine psql -U postgres -d simple_bank /bin/sh
