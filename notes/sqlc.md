@@ -46,3 +46,30 @@ sqlc:
 ```
 - **至此，sqlc使用方式如是这般**
     
+
+### sqlc.arg 用法
+- SQL 语句语法
+``` sql 
+-- name: AddAccountBalance :one
+update accounts set balance = balance + sqlc.arg(amount) where id = sqlc.arg(id) returning *;
+```
+- 生成的 go 代码
+``` go
+type AddAccountBalanceParams struct {
+	Amount int64 `json:"amount"`
+	ID     int64 `json:"id"`
+}
+
+func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, addAccountBalance, arg.Amount, arg.ID)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+```

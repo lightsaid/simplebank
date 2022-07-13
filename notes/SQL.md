@@ -103,10 +103,38 @@ ORDER BY a.pid;
 ![图片](./imgs/pg-lock4.jpg)
 - 如图：执行到第3步时，事务1就在等待事务2 commit/rollback 后才能查询结果；此时再执行第4步时，事务2就会死锁了从而rollback了，事务1发现事务2已经rollback，就可以查询了。
 
+#### 最好的方式是避免使用锁，不用锁就不会有死锁
+最好的方式，如果能避免死用锁，就不用锁；
+上面解决转账并发的方式，是查询select accounts再update accounts，才使用了 for update 锁；
+其实可以使用下面SQL语句，避免使用 for update，而且只有一条语句。
+`update accounts set balance = balance + 10 where id = 1 returning *;`
+
+-- 因此最终解决方式选用此种方式。
+
 
 #### 总结：for update、for no key update
 1. for update 是一种行级锁，又叫排它锁。
 2. for no key update 更新不会影响到id（外键）
 
 ### 在转账交易业务中发生并发问题2
+**上面已经解决由外键引起的死锁问题，而且并发的都是又A账户向B账户转账，如果同时存在A转B，B转A并发会发生什么呢？**
+- 模拟A转B，B转A 事务, 开启两个终端同时启动事务
+``` sql
+-- Tx1: transfer $10 form account 1 to account 2
+begin;
+update accounts set balance = balance - 10 where id = 1 returning *;  -- 第1步
+update accounts set balance = balance + 10 where id = 2 returning *;  -- 第3步
+rollback;
+
+-- Tx2: transfer $10 form account 2 to account 1
+begin;
+update accounts set balance = balance - 10 where id = 2 returning *;  -- 第2步
+update accounts set balance = balance + 10 where id = 1 returning *;  -- 第4步
+rollback;
+```
+*事务1上面执行到第`3`步时，就在等待了，因为事务2执行了第二步，两个事务同时修改accounts表中同一条数据了，事务1是第二修改到accounts表id为2的数据，所以事务1需要等待事务2提交或回滚事务才能继续往下执行；如果在执行第4步，两个事务有同时修改accouts表id为1的数据了，而这次是事务1先修改数据，事务2要等待事务1提交或回滚；因此有进入了死锁。*
+
+- 知道了原因，那有什么解决方案呢？直观的方式，就是一开始就让事务2等待事务1执行完了（commit/rollback）后再执行，将上面第`2`和第`4`步对换，即可解决，这样作的目的就是让两个事务一开是就对就对同一条数据操作（account表id为1的数据），后开始事务就必须要前事务执行完才开始执行了。
+- 核心代码
+
 

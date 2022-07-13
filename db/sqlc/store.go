@@ -97,7 +97,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		// NOTE: 更新 balance 方式 1， 执行2条sql不高效率
+		// NOTE: 更新 balance 方式 1， 执行2条sql不高效率 (同时并发 select * from ... for update 会死锁)
 		// // 4. a 账户 balance - 10
 		// account1, err := q.GetAccountForUpdate(context.Background(), arg.FromAccountID)
 		// if err != nil {
@@ -129,7 +129,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		// result.FromAccount = updateAccount1
 		// result.ToAccount = updateAccount2
 
-		// NOTE: 更新 balance 方式 2, 一条SQL语句
+		// NOTE: 更新 balance 方式 2, 一条SQL语句， 没用 for update（排它锁）没用锁，就不会有死锁。
 		param := AddAccountBalanceParams{
 			Amount: -arg.Amount,
 			ID:     arg.FromAccountID,
