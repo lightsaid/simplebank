@@ -136,5 +136,31 @@ rollback;
 
 - 知道了原因，那有什么解决方案呢？直观的方式，就是一开始就让事务2等待事务1执行完了（commit/rollback）后再执行，将上面第`2`和第`4`步对换，即可解决，这样作的目的就是让两个事务一开是就对就对同一条数据操作（account表id为1的数据），后开始事务就必须要前事务执行完才开始执行了。
 - 核心代码
+``` go
+// 更新 balance 同时解决双向转账并发问题，有序执行
+if arg.FromAccountID < arg.ToAccountID {
+    if result.FromAccount, err = updateMoney(ctx, q, arg.FromAccountID, -arg.Amount); err != nil {
+        return err
+    }
+    if result.ToAccount, err = updateMoney(ctx, q, arg.ToAccountID, arg.Amount); err != nil {
+        return err
+    }
+} else {
+    if result.ToAccount, err = updateMoney(ctx, q, arg.ToAccountID, arg.Amount); err != nil {
+        return err
+    }
+    if result.FromAccount, err = updateMoney(ctx, q, arg.FromAccountID, -arg.Amount); err != nil {
+        return err
+    }
+}
 
+func updateMoney(ctx context.Context, q *Queries, accountID, amount int64) (Account, error) {
+	param := AddAccountBalanceParams{
+		Amount: amount,
+		ID:     accountID,
+	}
+	return q.AddAccountBalance(context.Background(), param)
+}
+
+```
 

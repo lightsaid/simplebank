@@ -1,7 +1,5 @@
 make --dry-run --always-make --keep-going --print-directory
 make: Entering directory '/home/xqq/go/src/lightsaid.com/simplebank'
- 
 migrate create -seq -ext=.sql -dir=./db/migrations $NAME
- 
 make: Leaving directory '/home/xqq/go/src/lightsaid.com/simplebank'
  

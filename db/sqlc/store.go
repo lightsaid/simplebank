@@ -130,26 +130,40 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		// result.ToAccount = updateAccount2
 
 		// NOTE: 更新 balance 方式 2, 一条SQL语句， 没用 for update（排它锁）没用锁，就不会有死锁。
-		param := AddAccountBalanceParams{
-			Amount: -arg.Amount,
-			ID:     arg.FromAccountID,
-		}
-		result.FromAccount, err = q.AddAccountBalance(context.Background(), param)
-		if err != nil {
-			return nil
-		}
+		// if result.FromAccount, err = updateMoney(ctx, q, arg.FromAccountID, -arg.Amount); err != nil {
+		// 	return err
+		// }
+		// if result.ToAccount, err = updateMoney(ctx, q, arg.ToAccountID, arg.Amount); err != nil {
+		// 	return err
+		// }
 
-		param = AddAccountBalanceParams{
-			Amount: arg.Amount,
-			ID:     arg.ToAccountID,
-		}
-		result.ToAccount, err = q.AddAccountBalance(context.Background(), param)
-		if err != nil {
-			return nil
+		// NOTE: 更新 balance 同时解决双向转账并发问题，有序执行
+		if arg.FromAccountID < arg.ToAccountID {
+			if result.FromAccount, err = updateMoney(ctx, q, arg.FromAccountID, -arg.Amount); err != nil {
+				return err
+			}
+			if result.ToAccount, err = updateMoney(ctx, q, arg.ToAccountID, arg.Amount); err != nil {
+				return err
+			}
+		} else {
+			if result.ToAccount, err = updateMoney(ctx, q, arg.ToAccountID, arg.Amount); err != nil {
+				return err
+			}
+			if result.FromAccount, err = updateMoney(ctx, q, arg.FromAccountID, -arg.Amount); err != nil {
+				return err
+			}
 		}
 
 		return nil
 	})
 
 	return result, err
+}
+
+func updateMoney(ctx context.Context, q *Queries, accountID, amount int64) (Account, error) {
+	param := AddAccountBalanceParams{
+		Amount: amount,
+		ID:     accountID,
+	}
+	return q.AddAccountBalance(context.Background(), param)
 }
