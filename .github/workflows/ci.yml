@@ -43,7 +43,10 @@ jobs:
         sudo mv migrate.linux-amd64 /usr/bin/migrate
         which migrate
     - name: Run migrations
-      run: make migrate NAME=init_db
+      run: |
+        make migrate NAME=init_db
+        make migrate_up
+        make sqlc
 
     - name: Test
       run: make test
